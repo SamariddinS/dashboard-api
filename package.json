@@ -1,0 +1,24 @@
+{
+  "name": "dashboard-api",
+  "version": "1.0.0",
+  "description": "dashboard api created within the course of Nodejs",
+  "main": "main.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "api",
+    "dashboard",
+    "layer",
+    "architecture",
+    "nodejs"
+  ],
+  "author": "Sayfiddinov Samariddin",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.18"
+  }
+}
