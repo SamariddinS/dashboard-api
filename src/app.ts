@@ -1,18 +1,41 @@
-import express, { Express } from "express";
-import { useRouter } from "./users/users";
-import { Server } from "http";
+import express, { Express } from 'express';
+import { Server } from 'http';
+import { inject } from 'inversify/lib/annotation/inject';
+import { injectable } from 'inversify/lib/annotation/injectable';
+import 'reflect-metadata';
 
+import { ExceptionFilters } from './errors/exception.filter';
+import { ILogger } from './logger/logger.interface';
+import { TYPES } from './types';
+import { UsersController } from './users/users.controller';
+
+@injectable()
 export class App {
-  app: Express;
-  server: Server;
-  port: number;
+	app: Express;
+	server: Server;
+	port: number;
 
-  constructor() {
-    this.app = express();
-    this.port = 8000;
-  }
+	constructor(
+		@inject(TYPES.ILogger) private logger: ILogger,
+		@inject(TYPES.UsersController) private usersController: UsersController,
+		@inject(TYPES.ExceptionFilters) private exceptionFilters: ExceptionFilters,
+	) {
+		this.app = express();
+		this.port = 8000;
+	}
 
-  useRouter() {
-    this.app.use("/users", useRouter);
-  }
+	useRouter(): void {
+		this.app.use('/users', this.usersController.router);
+	}
+
+	useExceptionFilters(): void {
+		this.app.use(this.exceptionFilters.catch.bind(this.exceptionFilters));
+	}
+
+	public async init(): Promise<void> {
+		this.useRouter();
+		this.useExceptionFilters();
+		this.server = this.app.listen(this.port);
+		this.logger.log(`Server is running on port ${this.port}`);
+	}
 }
