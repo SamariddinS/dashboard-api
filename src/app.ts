@@ -1,3 +1,4 @@
+// import { json } from 'body-parser';
 import express, { Express } from 'express';
 import { Server } from 'http';
 import { inject } from 'inversify/lib/annotation/inject';
@@ -24,6 +25,10 @@ export class App {
 		this.port = 8000;
 	}
 
+	useMiddleware(): void {
+		this.app.use(express.json());
+	}
+
 	useRouter(): void {
 		this.app.use('/users', this.usersController.router);
 	}
@@ -33,6 +38,7 @@ export class App {
 	}
 
 	public async init(): Promise<void> {
+		this.useMiddleware();
 		this.useRouter();
 		this.useExceptionFilters();
 		this.server = this.app.listen(this.port);

@@ -2,7 +2,11 @@ import { NextFunction, Request, Response } from 'express';
 import { inject } from 'inversify/lib/annotation/inject';
 import { injectable } from 'inversify/lib/annotation/injectable';
 import 'reflect-metadata';
+import { ValidateMiddleware } from './../common/validate.middleware';
 import { HTTPError } from './../errors/http-error.class';
+import { UserLoginDto } from './dto/user-login.dto';
+import { UserRegisterDto } from './dto/user-register.dto';
+import { UserService } from './user.service';
 
 import { BaseController } from '../common/basa.controller';
 import { ILogger } from '../logger/logger.interface';
@@ -11,7 +15,10 @@ import { IUsers } from './users.interface';
 
 @injectable()
 export class UsersController extends BaseController implements IUsers {
-	constructor(@inject(TYPES.ILogger) private loggerService: ILogger) {
+	constructor(
+		@inject(TYPES.ILogger) private loggerService: ILogger,
+		@inject(TYPES.UserService) private userService: UserService,
+	) {
 		super(loggerService);
 		this.bindRoutes([
 			{
@@ -28,19 +35,32 @@ export class UsersController extends BaseController implements IUsers {
 				path: '/register',
 				method: 'post',
 				func: this.register,
+				middlewares: [new ValidateMiddleware(UserRegisterDto)],
 			},
 		]);
 	}
 
-	public async getUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
+	getUsers(req: Request, res: Response, next: NextFunction): void {
 		this.ok(res, 'getUsers');
 	}
 
-	public async login(req: Request, res: Response, next: NextFunction): Promise<void> {
+	login(req: Request<{}, {}, UserLoginDto>, res: Response, next: NextFunction): void {
+		console.log(req.body);
+
 		next(new HTTPError(401, 'Unauthorized', 'login'));
 	}
 
-	public async register(req: Request, res: Response, next: NextFunction): Promise<void> {
-		this.ok(res, 'register');
+	async register(
+		{ body }: Request<{}, {}, UserRegisterDto>,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		const result = await this.userService.createUser(body);
+
+		if (!result) {
+			return next(new HTTPError(422, 'User is exist', 'register'));
+		}
+
+		this.ok(res, { email: result.email });
 	}
 }
