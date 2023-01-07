@@ -28,7 +28,6 @@ export class App {
 	useMiddleware(): void {
 		this.app.use(express.json());
 	}
-
 	useRouter(): void {
 		this.app.use('/users', this.usersController.router);
 	}

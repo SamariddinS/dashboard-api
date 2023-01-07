@@ -1,1 +1,1 @@
-# Project ofcourse rating system
+# Project of course rating system
