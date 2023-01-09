@@ -3,6 +3,7 @@ import { inject } from 'inversify/lib/annotation/inject';
 import { injectable } from 'inversify/lib/annotation/injectable';
 import { sign } from 'jsonwebtoken';
 import 'reflect-metadata';
+import { AuthGuard } from './../common/auth.guard';
 import { IConfigService } from './../config/config.service.interface';
 
 import { BaseController } from '../common/basa.controller';
@@ -12,7 +13,7 @@ import { ValidateMiddleware } from './../common/validate.middleware';
 import { HTTPError } from './../errors/http-error.class';
 import { UserLoginDto } from './dto/user-login.dto';
 import { UserRegisterDto } from './dto/user-register.dto';
-import { IUsersService } from './user.service.interface';
+import { IUsersService } from './users.service.interface';
 import { IUsers } from './users.interface';
 
 @injectable()
@@ -28,6 +29,7 @@ export class UsersController extends BaseController implements IUsers {
 				path: '/info',
 				method: 'get',
 				func: this.info,
+				middlewares: [new AuthGuard()],
 			},
 			{
 				path: '/login',
@@ -73,12 +75,9 @@ export class UsersController extends BaseController implements IUsers {
 		this.ok(res, { email: result.email, id: result.id });
 	}
 
-	async info(
-		{ user }: Request<{}, {}, UserRegisterDto>,
-		res: Response,
-		next: NextFunction,
-	): Promise<void> {
-		this.ok(res, { email: user });
+	async info({ user }: Request, res: Response, next: NextFunction): Promise<void> {
+		const userInfo = await this.userService.getUserInfo(user);
+		this.ok(res, { email: userInfo?.email, id: userInfo?.id });
 	}
 
 	private signJWT(email: string, secret: string): Promise<string> {

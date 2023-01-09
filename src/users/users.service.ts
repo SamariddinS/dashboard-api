@@ -1,11 +1,11 @@
 import { UserModel } from '@prisma/client';
 import { inject, injectable } from 'inversify';
-import { IConfigService } from './../config/config.service.interface';
-import { TYPES } from './../types';
+import { IConfigService } from '../config/config.service.interface';
+import { TYPES } from '../types';
 import { UserLoginDto } from './dto/user-login.dto';
 import { UserRegisterDto } from './dto/user-register.dto';
 import { User } from './user.entity';
-import { IUsersService } from './user.service.interface';
+import { IUsersService } from './users.service.interface';
 import { IUsersRepository } from './users.repository.interface';
 
 @injectable()
@@ -36,5 +36,9 @@ export class UserService implements IUsersService {
 
 		const user = new User(existedUser.email, existedUser.name, existedUser.password);
 		return user.comparePassword(password);
+	}
+
+	async getUserInfo(email: string): Promise<UserModel | null> {
+		return this.usersRepository.find(email);
 	}
 }
