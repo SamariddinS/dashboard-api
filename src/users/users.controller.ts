@@ -13,8 +13,8 @@ import { ValidateMiddleware } from './../common/validate.middleware';
 import { HTTPError } from './../errors/http-error.class';
 import { UserLoginDto } from './dto/user-login.dto';
 import { UserRegisterDto } from './dto/user-register.dto';
-import { IUsersService } from './users.service.interface';
 import { IUsers } from './users.interface';
+import { IUsersService } from './users.service.interface';
 
 @injectable()
 export class UsersController extends BaseController implements IUsers {
@@ -72,7 +72,7 @@ export class UsersController extends BaseController implements IUsers {
 			return next(new HTTPError(422, 'User is exist', 'register'));
 		}
 
-		this.ok(res, { email: result.email, id: result.id });
+		this.created(res);
 	}
 
 	async info({ user }: Request, res: Response, next: NextFunction): Promise<void> {

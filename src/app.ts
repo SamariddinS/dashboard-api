@@ -51,4 +51,9 @@ export class App {
 		this.server = this.app.listen(this.port);
 		this.logger.log(`Server is running on port ${this.port}`);
 	}
+
+	public async close(): Promise<void> {
+		this.prismaService.disconnect();
+		this.server.close();
+	}
 }
