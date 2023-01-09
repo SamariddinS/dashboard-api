@@ -1,30 +1,33 @@
 import { NextFunction, Request, Response } from 'express';
 import { inject } from 'inversify/lib/annotation/inject';
 import { injectable } from 'inversify/lib/annotation/injectable';
+import { sign } from 'jsonwebtoken';
 import 'reflect-metadata';
-import { ValidateMiddleware } from './../common/validate.middleware';
-import { HTTPError } from './../errors/http-error.class';
-import { UserLoginDto } from './dto/user-login.dto';
-import { UserRegisterDto } from './dto/user-register.dto';
-import { UserService } from './user.service';
+import { IConfigService } from './../config/config.service.interface';
 
 import { BaseController } from '../common/basa.controller';
 import { ILogger } from '../logger/logger.interface';
 import { TYPES } from '../types';
+import { ValidateMiddleware } from './../common/validate.middleware';
+import { HTTPError } from './../errors/http-error.class';
+import { UserLoginDto } from './dto/user-login.dto';
+import { UserRegisterDto } from './dto/user-register.dto';
+import { IUsersService } from './user.service.interface';
 import { IUsers } from './users.interface';
 
 @injectable()
 export class UsersController extends BaseController implements IUsers {
 	constructor(
 		@inject(TYPES.ILogger) private loggerService: ILogger,
-		@inject(TYPES.UserService) private userService: UserService,
+		@inject(TYPES.UserService) private userService: IUsersService,
+		@inject(TYPES.ConfigService) private configService: IConfigService,
 	) {
 		super(loggerService);
 		this.bindRoutes([
 			{
-				path: '/',
+				path: '/info',
 				method: 'get',
-				func: this.getUsers,
+				func: this.info,
 			},
 			{
 				path: '/login',
@@ -41,10 +44,6 @@ export class UsersController extends BaseController implements IUsers {
 		]);
 	}
 
-	getUsers(req: Request, res: Response, next: NextFunction): void {
-		this.ok(res, 'getUsers');
-	}
-
 	async login(
 		{ body }: Request<{}, {}, UserLoginDto>,
 		res: Response,
@@ -55,8 +54,9 @@ export class UsersController extends BaseController implements IUsers {
 		if (!result) {
 			return next(new HTTPError(401, 'Login or password incorrect', 'login'));
 		}
+		const jwt = await this.signJWT(body.email, this.configService.get('SECRET'));
 
-		this.ok(res, { login: 'success' });
+		this.ok(res, { jwt });
 	}
 
 	async register(
@@ -71,5 +71,35 @@ export class UsersController extends BaseController implements IUsers {
 		}
 
 		this.ok(res, { email: result.email, id: result.id });
+	}
+
+	async info(
+		{ user }: Request<{}, {}, UserRegisterDto>,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		this.ok(res, { email: user });
+	}
+
+	private signJWT(email: string, secret: string): Promise<string> {
+		return new Promise<string>((resolve, reject) => {
+			sign(
+				{
+					email,
+					iat: Math.floor(Date.now() / 1000),
+				},
+				secret,
+				{
+					algorithm: 'HS256',
+				},
+				(err, token) => {
+					if (err) {
+						reject(err);
+					}
+
+					resolve(token as string);
+				},
+			);
+		});
 	}
 }

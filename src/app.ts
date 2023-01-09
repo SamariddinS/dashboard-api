@@ -3,6 +3,7 @@ import { Server } from 'http';
 import { inject } from 'inversify/lib/annotation/inject';
 import { injectable } from 'inversify/lib/annotation/injectable';
 import 'reflect-metadata';
+import { AuthMiddleware } from './common/auth.middleware';
 import { PrismaService } from './database/prisma.service';
 
 import { IConfigService } from './config/config.service.interface';
@@ -30,6 +31,9 @@ export class App {
 
 	useMiddleware(): void {
 		this.app.use(express.json());
+
+		const authMiddleware = new AuthMiddleware(this.configService.get('SECRET'));
+		this.app.use(authMiddleware.execute.bind(authMiddleware));
 	}
 	useRouter(): void {
 		this.app.use('/users', this.usersController.router);
